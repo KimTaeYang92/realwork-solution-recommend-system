@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solution Finder - Split View</title>
+    <style>
+        :root {
+            --sidebar-width: 300px;
+            --primary: #3b82f6;
+            --header-bg: #2d3748;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+        }
+
+        /* Sidebar */
+        aside {
+            width: var(--sidebar-width);
+            background-color: white;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            padding: 1.5rem;
+            background-color: var(--header-bg);
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .nav-section {
+            padding: 1.5rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #718096;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .step-label:first-child { margin-top: 0; }
+
+        select {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            height: 60px;
+        }
+
+        .breadcrumbs {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .empty-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #a0aec0;
+        }
+
+        /* Content Layout */
+        .content-grid {
+            display: none;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 1rem;
+        }
+
+        h2 { margin-top: 0; font-size: 1.5rem; }
+        
+        .quote-box {
+            border-left: 4px solid var(--primary);
+            padding-left: 1rem;
+            margin: 1.5rem 0;
+            font-style: italic;
+            font-size: 1.25rem;
+            color: #4a5568;
+        }
+
+        .tag-cloud { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .tag-pill {
+            background: #ebf8ff;
+            color: #3182ce;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .solution-list-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .solution-list-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .sol-code {
+            font-size: 0.7rem;
+            color: #a0aec0;
+            font-family: monospace;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .sol-name { font-weight: 600; color: #2d3748; }
+        .sol-cat { font-size: 0.85rem; color: #718096; }
+
+        @media (max-width: 900px) {
+            .content-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <div class="brand">PRO SOLUTION</div>
+        <div class="nav-section">
+            <div class="step-label">1. Category</div>
+            <select id="mainCat"><option value="">Select...</option></select>
+            
+            <div class="step-label">2. Sub-Category</div>
+            <select id="midCat" disabled><option value="">Select...</option></select>
+            
+            <div class="step-label">3. Diagnosis Issue</div>
+            <select id="subCat" disabled><option value="">Select...</option></select>
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <div class="breadcrumbs" id="breadcrumbs">Home</div>
+        </header>
+
+        <div class="content-scroll">
+            <div id="emptyState" class="empty-placeholder">
+                <h3>Ready to Recommend</h3>
+                <p>Please select an issue from the sidebar.</p>
+            </div>
+
+            <div id="resultContainer" class="content-grid">
+                <!-- Left Column: Context -->
+                <div class="left-col">
+                    <div class="card">
+                        <h2>Diagnosis</h2>
+                        <div class="quote-box" id="customerSentence">"Sentence"</div>
+                        
+                        <div class="step-label">Keywords</div>
+                        <div class="tag-cloud" id="tagsContainer"></div>
+
+                        <div class="step-label" style="margin-top:1rem;">Insight</div>
+                        <p id="recommendationText">Text</p>
+                    </div>
+                </div>
+
+                <!-- Right Column: Solutions -->
+                <div class="right-col">
+                    <h3 style="margin-top:0; margin-bottom:1rem; font-size:1rem; color:#718096; text-transform:uppercase;">Solutions</h3>
+                    <div id="solutionGrid">
+                        <!-- Items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const solutionDB = { '1.1.1.1': { area: '조직개발', method: 'Consulting', category: '조직개발컨설팅', type: '조직진단 및 솔루션 도출' }, '1.1.1.2': { area: '조직개발', method: 'Consulting', category: '조직개발컨설팅', type: '조직방향 수립 컨설팅' }, '1.1.1.3': { area: '조직개발', method: 'Workshop', category: '워크숍', type: '비전/가치 내재화 워크숍' }, '1.2.1.1': { area: '리더십', method: 'Training', category: '팀장리더십', type: '성과관리 코칭 스킬' }, '1.2.1.2': { area: '리더십', method: 'Training', category: '임원리더십', type: '전략적 의사결정 과정' }, '2.1.1.1': { area: 'HR제도', method: 'System', category: '평가보상', type: 'KPI 고도화 컨설팅' }, '2.1.1.2': { area: 'HR제도', method: 'System', category: '채용', type: '채용 브랜딩 전략' } };
+        const scenarios = [ { main: 'A. 전략방향->실행', mid: 'A-1. 전략방향 공유', sub: '전략 전달 부재', sentence: '전략과 방향이 현장 언어로 내려오지 않습니다.', tags: ['#전략이안내려옴', '#방향이불분명', '#메세지불일치'], targets: ['#전사', '#임원', '#팀장'], point: '전략 자체의 문제보다는, 이를 현장에 전달하는 "번역"과 "소통 구조"의 부재를 해결해야 합니다.', solutions: ['1.1.1.1', '1.1.1.2', '1.1.1.3'] }, { main: 'A. 전략방향->실행', mid: 'A-1. 전략방향 공유', sub: '우선순위 기준 부재', sentence: '무엇부터 해야 할지 기준이 없습니다.', tags: ['#우선순위모호', '#일이많음', '#선택이어려움'], targets: ['#임원', '#팀장', '#본부/사업부'], point: '업무 과부하가 아니라 "선택과 집중"을 위한 명확한 의사결정 기준이 부재한 상태입니다.', solutions: ['1.2.1.2', '1.1.1.2'] }, { main: 'A. 전략방향->실행', mid: 'A-2. 실행력 강화', sub: '실행 동기 부족', sentence: '왜 해야 하는지 공감이 되지 않아 움직이지 않습니다.', tags: ['#동기부여실패', '#수동적태도', '#패배의식'], targets: ['#팀장', '#팀원'], point: 'Top-down 지시가 아닌 구성원의 참여를 통해 실행의 "Why"를 공유해야 합니다.', solutions: ['1.1.1.3'] }, { main: 'B. 리더십->소통', mid: 'B-1. 성과 관리', sub: '피드백 부재', sentence: '열심히 해도 인정받지 못하고, 무엇을 고쳐야 할지 모릅니다.', tags: ['#피드백없음', '#성장정체', '#불만누적'], targets: ['#팀장', '#파트장'], point: '평가 시점의 통보가 아닌, 상시적인 성과 관리와 육성 관점의 피드백 스킬이 필요합니다.', solutions: ['1.2.1.1'] }, { main: 'B. 리더십->소통', mid: 'B-2. 조직 문화', sub: '수직적 문화', sentence: '상사 눈치 보느라 자유로운 의견 개진이 어렵습니다.', tags: ['#눈치문화', '#침묵', '#혁신저해'], targets: ['#전사', '#임원'], point: '심리적 안전감을 조성하여 구성원이 두려움 없이 의견을 말할 수 있는 문화를 만들어야 합니다.', solutions: ['1.1.1.1', '1.1.1.3'] } ];
+
+        const mainSelect = document.getElementById('mainCat'); const midSelect = document.getElementById('midCat'); const subSelect = document.getElementById('subCat'); const resultContainer = document.getElementById('resultContainer'); const emptyState = document.getElementById('emptyState');
+        const uniqueMainCats = [...new Set(scenarios.map(s => s.main))];
+        
+        function init() { uniqueMainCats.forEach(cat => { const option = document.createElement('option'); option.value = cat; option.textContent = cat; mainSelect.appendChild(option); }); }
+
+        function updateBreadcrumbs() {
+            const p1 = mainSelect.value || 'Home';
+            const p2 = midSelect.value ? ` > ${midSelect.value}` : '';
+            const p3 = subSelect.value ? ` > ${subSelect.value}` : '';
+            document.getElementById('breadcrumbs').textContent = `${p1}${p2}${p3}`;
+        }
+
+        mainSelect.addEventListener('change', (e) => { const selectedMain = e.target.value; midSelect.innerHTML = '<option value="">Select...</option>'; subSelect.innerHTML = '<option value="">Select...</option>'; subSelect.disabled = true; resultContainer.style.display = 'none'; emptyState.style.display = 'block'; updateBreadcrumbs(); if (!selectedMain) { midSelect.disabled = true; return; } const relatedMids = [...new Set(scenarios.filter(s => s.main === selectedMain).map(s => s.mid))]; relatedMids.forEach(mid => { const option = document.createElement('option'); option.value = mid; option.textContent = mid; midSelect.appendChild(option); }); midSelect.disabled = false; });
+        midSelect.addEventListener('change', (e) => { const selectedMain = mainSelect.value; const selectedMid = e.target.value; subSelect.innerHTML = '<option value="">Select...</option>'; resultContainer.style.display = 'none'; emptyState.style.display = 'block'; updateBreadcrumbs(); if (!selectedMid) { subSelect.disabled = true; return; } const relatedSubs = scenarios.filter(s => s.main === selectedMain && s.mid === selectedMid).map(s => s.sub); relatedSubs.forEach(sub => { const option = document.createElement('option'); option.value = sub; option.textContent = sub; subSelect.appendChild(option); }); subSelect.disabled = false; });
+        subSelect.addEventListener('change', (e) => { const selectedSub = e.target.value; updateBreadcrumbs(); if (!selectedSub) { resultContainer.style.display = 'none'; emptyState.style.display = 'block'; return; } const matchedScenario = scenarios.find(s => s.main === mainSelect.value && s.mid === midSelect.value && s.sub === selectedSub); if (matchedScenario) { renderResult(matchedScenario); } });
+
+        function renderResult(data) {
+            emptyState.style.display = 'none'; resultContainer.style.display = 'grid';
+            document.getElementById('customerSentence').textContent = `"${data.sentence}"`;
+            document.getElementById('recommendationText').textContent = data.point;
+            const tagsContainer = document.getElementById('tagsContainer');
+            tagsContainer.innerHTML = '';
+            [...data.tags, ...data.targets].forEach(tag => { const span = document.createElement('span'); span.className = 'tag-pill'; span.textContent = tag; tagsContainer.appendChild(span); });
+            const solutionGrid = document.getElementById('solutionGrid');
+            solutionGrid.innerHTML = '';
+            data.solutions.forEach(code => {
+                const sol = solutionDB[code];
+                if(sol) {
+                    const card = document.createElement('div'); card.className = 'solution-list-item';
+                    card.innerHTML = `<span class="sol-code">${code}</span><div class="sol-name">${sol.type}</div><div class="sol-cat">${sol.category}</div>`;
+                    solutionGrid.appendChild(card);
+                }
+            });
+        }
+        init();
+    </script>
+</body>
+</html>

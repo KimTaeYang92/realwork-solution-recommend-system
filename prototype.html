@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>솔루션 추천 시스템 프로토타입</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border-color: #e5e7eb;
+            --tag-bg: #dbeafe;
+            --tag-text: #1e40af;
+            --hint-bg: #fce7f3;
+            --hint-text: #9d174d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar (Filters) */
+        aside {
+            width: 350px;
+            background-color: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-shadow: 4px 0 6px -1px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+
+        aside h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+        }
+
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background-color: #f9fafb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        select:hover {
+            border-color: var(--primary-color);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        select:disabled {
+            background-color: #e5e7eb;
+            cursor: not-allowed;
+            color: #9ca3af;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 2rem 3rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-sub);
+            text-align: center;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Result Section */
+        .result-container {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Diagnosis Card */
+        .diagnosis-card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid var(--primary-color);
+        }
+
+        .diagnosis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .diagnosis-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .customer-sentence {
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1.4;
+            color: var(--text-main);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .customer-sentence::before {
+            content: "“";
+            color: var(--primary-color);
+            font-size: 3rem;
+            position: absolute;
+            left: -2rem;
+            top: -1rem;
+            opacity: 0.3;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tag {
+            padding: 0.4rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .tag.core {
+            background-color: var(--tag-bg);
+            color: var(--tag-text);
+        }
+
+        .tag.hint {
+            background-color: var(--hint-bg);
+            color: var(--hint-text);
+        }
+
+        .recommendation-point {
+            background-color: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px dashed var(--border-color);
+        }
+
+        .point-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* Solution Section */
+        .solution-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .solution-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .solution-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .solution-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .sol-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
+        .sol-code {
+            font-family: monospace;
+            background: #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .sol-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .sol-category {
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .sol-meta {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                overflow: auto;
+            }
+            aside {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Filters Sidebar -->
+    <aside>
+        <h1>Solution Finder</h1>
+        
+        <div class="filter-group">
+            <label for="mainCat">대분류 (Category)</label>
+            <select id="mainCat">
+                <option value="">선택해주세요</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="midCat">중분류 (Sub-Category)</label>
+            <select id="midCat" disabled>
+                <option value="">대분류를 먼저 선택하세요</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="subCat">소분류 (Issue)</label>
+            <select id="subCat" disabled>
+                <option value="">중분류를 먼저 선택하세요</option>
+            </select>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+        <!-- State 1: Nothing Selected -->
+        <div id="emptyState" class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <h2>상황을 진단하기 위해<br>왼쪽의 분류를 순서대로 선택해주세요.</h2>
+        </div>
+
+        <!-- State 2: Result Display -->
+        <div id="resultContainer" class="result-container">
+            <!-- Diagnosis Section -->
+            <div class="diagnosis-card">
+                <div class="diagnosis-header">
+                    <span id="displayPath" class="diagnosis-title">전략방향 > 실행 > 전략 전달 부재</span>
+                </div>
+                
+                <h1 id="customerSentence" class="customer-sentence">
+                    "전략과 방향이 현장 언어로 내려오지 않습니다."
+                </h1>
+
+                <div class="tags-container" id="tagsContainer">
+                    <!-- Tags injected via JS -->
+                </div>
+
+                <div class="recommendation-point">
+                    <span class="point-label">💡 추천 포인트</span>
+                    <p id="recommendationText">전략이 문제가 아니라 번역과 실행 구조의 문제야기</p>
+                </div>
+            </div>
+
+            <!-- Solutions Section -->
+            <div class="solution-section">
+                <h2>📦 추천 솔루션</h2>
+                <div id="solutionGrid" class="solution-grid">
+                    <!-- Cards injected via JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ---------------------------------------------------------
+        // 1. Data Definitions (Mock DB)
+        // ---------------------------------------------------------
+        
+        // Solution Database
+        const solutionDB = {
+            '1.1.1.1': { area: '조직개발', method: 'Consulting', category: '조직개발컨설팅', type: '조직진단 및 솔루션 도출' },
+            '1.1.1.2': { area: '조직개발', method: 'Consulting', category: '조직개발컨설팅', type: '조직방향 수립 컨설팅' },
+            '1.1.1.3': { area: '조직개발', method: 'Workshop', category: '워크숍', type: '비전/가치 내재화 워크숍' },
+            '1.2.1.1': { area: '리더십', method: 'Training', category: '팀장리더십', type: '성과관리 코칭 스킬' },
+            '1.2.1.2': { area: '리더십', method: 'Training', category: '임원리더십', type: '전략적 의사결정 과정' },
+            '2.1.1.1': { area: 'HR제도', method: 'System', category: '평가보상', type: 'KPI 고도화 컨설팅' },
+            '2.1.1.2': { area: 'HR제도', method: 'System', category: '채용', type: '채용 브랜딩 전략' }
+        };
+
+        // Scenario Database (Hierarchical Data)
+        const scenarios = [
+            // A. 전략방향 -> 실행
+            {
+                main: 'A. 전략방향->실행',
+                mid: 'A-1. 전략방향 공유',
+                sub: '전략 전달 부재',
+                sentence: '전략과 방향이 현장 언어로 내려오지 않습니다.',
+                tags: ['#전략이안내려옴', '#방향이불분명', '#메세지불일치'],
+                targets: ['#전사', '#임원', '#팀장'],
+                point: '전략 자체의 문제보다는, 이를 현장에 전달하는 "번역"과 "소통 구조"의 부재를 해결해야 합니다.',
+                solutions: ['1.1.1.1', '1.1.1.2', '1.1.1.3']
+            },
+            {
+                main: 'A. 전략방향->실행',
+                mid: 'A-1. 전략방향 공유',
+                sub: '우선순위 기준 부재',
+                sentence: '무엇부터 해야 할지 기준이 없습니다.',
+                tags: ['#우선순위모호', '#일이많음', '#선택이어려움'],
+                targets: ['#임원', '#팀장', '#본부/사업부'],
+                point: '업무 과부하가 아니라 "선택과 집중"을 위한 명확한 의사결정 기준이 부재한 상태입니다.',
+                solutions: ['1.2.1.2', '1.1.1.2']
+            },
+            {
+                main: 'A. 전략방향->실행',
+                mid: 'A-2. 실행력 강화',
+                sub: '실행 동기 부족',
+                sentence: '왜 해야 하는지 공감이 되지 않아 움직이지 않습니다.',
+                tags: ['#동기부여실패', '#수동적태도', '#패배의식'],
+                targets: ['#팀장', '#팀원'],
+                point: 'Top-down 지시가 아닌 구성원의 참여를 통해 실행의 "Why"를 공유해야 합니다.',
+                solutions: ['1.1.1.3']
+            },
+            
+            // B. 리더십 -> 소통
+            {
+                main: 'B. 리더십->소통',
+                mid: 'B-1. 성과 관리',
+                sub: '피드백 부재',
+                sentence: '열심히 해도 인정받지 못하고, 무엇을 고쳐야 할지 모릅니다.',
+                tags: ['#피드백없음', '#성장정체', '#불만누적'],
+                targets: ['#팀장', '#파트장'],
+                point: '평가 시점의 통보가 아닌, 상시적인 성과 관리와 육성 관점의 피드백 스킬이 필요합니다.',
+                solutions: ['1.2.1.1']
+            },
+            {
+                main: 'B. 리더십->소통',
+                mid: 'B-2. 조직 문화',
+                sub: '수직적 문화',
+                sentence: '상사 눈치 보느라 자유로운 의견 개진이 어렵습니다.',
+                tags: ['#눈치문화', '#침묵', '#혁신저해'],
+                targets: ['#전사', '#임원'],
+                point: '심리적 안전감을 조성하여 구성원이 두려움 없이 의견을 말할 수 있는 문화를 만들어야 합니다.',
+                solutions: ['1.1.1.1', '1.1.1.3']
+            }
+        ];
+
+        // ---------------------------------------------------------
+        // 2. DOM Elements & Initialization
+        // ---------------------------------------------------------
+        const mainSelect = document.getElementById('mainCat');
+        const midSelect = document.getElementById('midCat');
+        const subSelect = document.getElementById('subCat');
+        
+        const emptyState = document.getElementById('emptyState');
+        const resultContainer = document.getElementById('resultContainer');
+
+        // Extract unique Main Categories on load
+        const uniqueMainCats = [...new Set(scenarios.map(s => s.main))];
+        
+        function init() {
+            uniqueMainCats.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                mainSelect.appendChild(option);
+            });
+        }
+
+        // ---------------------------------------------------------
+        // 3. Event Listeners (Logic)
+        // ---------------------------------------------------------
+
+        // Step 1: Main Category Changed
+        mainSelect.addEventListener('change', (e) => {
+            const selectedMain = e.target.value;
+            
+            // Reset lower levels
+            midSelect.innerHTML = '<option value="">선택해주세요</option>';
+            subSelect.innerHTML = '<option value="">중분류를 먼저 선택하세요</option>';
+            subSelect.disabled = true;
+            hideResult();
+
+            if (!selectedMain) {
+                midSelect.disabled = true;
+                return;
+            }
+
+            // Filter Mids belonging to this Main
+            const relatedMids = [...new Set(
+                scenarios.filter(s => s.main === selectedMain).map(s => s.mid)
+            )];
+
+            relatedMids.forEach(mid => {
+                const option = document.createElement('option');
+                option.value = mid;
+                option.textContent = mid;
+                midSelect.appendChild(option);
+            });
+            midSelect.disabled = false;
+        });
+
+        // Step 2: Mid Category Changed
+        midSelect.addEventListener('change', (e) => {
+            const selectedMain = mainSelect.value;
+            const selectedMid = e.target.value;
+
+            // Reset lower levels
+            subSelect.innerHTML = '<option value="">선택해주세요</option>';
+            hideResult();
+
+            if (!selectedMid) {
+                subSelect.disabled = true;
+                return;
+            }
+
+            // Filter Subs belonging to Main + Mid
+            const relatedSubs = scenarios
+                .filter(s => s.main === selectedMain && s.mid === selectedMid)
+                .map(s => s.sub);
+
+            relatedSubs.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = sub;
+                subSelect.appendChild(option);
+            });
+            subSelect.disabled = false;
+        });
+
+        // Step 3: Sub Category Changed (Final Selection)
+        subSelect.addEventListener('change', (e) => {
+            const selectedSub = e.target.value;
+            if (!selectedSub) {
+                hideResult();
+                return;
+            }
+            
+            const selectedMain = mainSelect.value;
+            const selectedMid = midSelect.value;
+
+            // Find data
+            const matchedScenario = scenarios.find(s => 
+                s.main === selectedMain && 
+                s.mid === selectedMid && 
+                s.sub === selectedSub
+            );
+
+            if (matchedScenario) {
+                renderResult(matchedScenario);
+            }
+        });
+
+        // ---------------------------------------------------------
+        // 4. Render Functions
+        // ---------------------------------------------------------
+        function hideResult() {
+            emptyState.style.display = 'flex';
+            resultContainer.style.display = 'none';
+        }
+
+        function renderResult(data) {
+            emptyState.style.display = 'none';
+            resultContainer.style.display = 'flex';
+
+            // Fill Diagnosis Info
+            document.getElementById('displayPath').textContent = `${data.main} > ${data.mid} > ${data.sub}`;
+            document.getElementById('customerSentence').textContent = `"${data.sentence}"`;
+            document.getElementById('recommendationText').textContent = data.point;
+
+            // Tags (Core + Hints)
+            const tagsContainer = document.getElementById('tagsContainer');
+            tagsContainer.innerHTML = '';
+            
+            data.tags.forEach(tag => {
+                const span = document.createElement('span');
+                span.className = 'tag core';
+                span.textContent = tag;
+                tagsContainer.appendChild(span);
+            });
+
+            data.targets.forEach(target => {
+                const span = document.createElement('span');
+                span.className = 'tag hint';
+                span.textContent = `🎯 ${target}`; // Add icon for hint
+                tagsContainer.appendChild(span);
+            });
+
+            // Fill Solutions
+            const solutionGrid = document.getElementById('solutionGrid');
+            solutionGrid.innerHTML = '';
+
+            data.solutions.forEach(code => {
+                const sol = solutionDB[code];
+                if(sol) {
+                    const card = document.createElement('div');
+                    card.className = 'solution-card';
+                    card.innerHTML = `
+                        <div class="sol-header">
+                            <span class="sol-code">CODE: ${code}</span>
+                            <span>${sol.method}</span>
+                        </div>
+                        <h3 class="sol-title">${sol.type}</h3>
+                        <div class="sol-category">${sol.category}</div>
+                        <div class="sol-meta">
+                            <span>📂 ${sol.area}</span>
+                        </div>
+                    `;
+                    solutionGrid.appendChild(card);
+                }
+            });
+        }
+
+        // Run Init
+        init();
+
+    </script>
+</body>
+</html>

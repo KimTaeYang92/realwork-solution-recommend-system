@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solution Finder - Minimal</title>
+    <style>
+        :root {
+            --text-color: #1a1a1a;
+            --accent: #2c3e50;
+            --bg-color: #ffffff;
+            --input-bg: #f8f8f8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Times New Roman', Times, serif; /* Intentional serif for editorial look */
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 4rem 2rem;
+        }
+
+        h1 {
+            font-family: 'Helvetica Neue', sans-serif;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+        }
+
+        /* Form Styling */
+        .step-form {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .step {
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-family: 'Helvetica Neue', sans-serif;
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        select {
+            width: 100%;
+            border: none;
+            border-bottom: 2px solid #ddd;
+            background: transparent;
+            padding: 1rem 0;
+            font-size: 1.5rem;
+            font-family: 'Times New Roman', serif;
+            color: var(--text-color);
+            cursor: pointer;
+            border-radius: 0;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        select:focus {
+            outline: none;
+            border-bottom-color: var(--text-color);
+        }
+        
+        select:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Results */
+        .result-container {
+            display: none;
+            animation: fadeIn 0.8s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .diagnosis-card {
+            margin-bottom: 4rem;
+            text-align: center;
+        }
+
+        .customer-quote {
+            font-size: 2.5rem;
+            font-style: italic;
+            line-height: 1.2;
+            margin-bottom: 2rem;
+        }
+
+        .meta-tags {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            font-family: 'Helvetica Neue', sans-serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .insight-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #555;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .solution-list {
+            border-top: 1px solid #111;
+            padding-top: 2rem;
+        }
+
+        .solution-list h2 {
+            font-family: 'Helvetica Neue', sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2rem;
+        }
+
+        .solution-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .sol-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .sol-type {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .sol-cat {
+            font-family: 'Helvetica Neue', sans-serif;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .sol-right {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Solution Recommender</h1>
+        
+        <div class="step-form">
+            <div class="step">
+                <label>01 CATEGORY</label>
+                <select id="mainCat"><option value="">Select Category</option></select>
+            </div>
+            <div class="step">
+                <label>02 SUB-CATEGORY</label>
+                <select id="midCat" disabled><option value="">Select Sub-Category</option></select>
+            </div>
+            <div class="step">
+                <label>03 ISSUE</label>
+                <select id="subCat" disabled><option value="">Select Issue</option></select>
+            </div>
+        </div>
+
+        <div id="resultContainer" class="result-container">
+            <div class="diagnosis-card">
+                <div id="customerSentence" class="customer-quote">"Quote here"</div>
+                <div class="meta-tags" id="tagsContainer">
+                    <!-- Tags -->
+                </div>
+                <p id="recommendationText" class="insight-text">Insight goes here.</p>
+            </div>
+
+            <div class="solution-list">
+                <h2>Suggested Solutions</h2>
+                <div id="solutionGrid">
+                    <!-- List Items -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const solutionDB = { '1.1.1.1': { area: '조직개발', method: 'Consulting', category: '조직개발컨설팅', type: '조직진단 및 솔루션 도출' }, '1.1.1.2': { area: '조직개발', method: 'Consulting', category: '조직개발컨설팅', type: '조직방향 수립 컨설팅' }, '1.1.1.3': { area: '조직개발', method: 'Workshop', category: '워크숍', type: '비전/가치 내재화 워크숍' }, '1.2.1.1': { area: '리더십', method: 'Training', category: '팀장리더십', type: '성과관리 코칭 스킬' }, '1.2.1.2': { area: '리더십', method: 'Training', category: '임원리더십', type: '전략적 의사결정 과정' }, '2.1.1.1': { area: 'HR제도', method: 'System', category: '평가보상', type: 'KPI 고도화 컨설팅' }, '2.1.1.2': { area: 'HR제도', method: 'System', category: '채용', type: '채용 브랜딩 전략' } };
+        const scenarios = [ { main: 'A. 전략방향->실행', mid: 'A-1. 전략방향 공유', sub: '전략 전달 부재', sentence: '전략과 방향이 현장 언어로 내려오지 않습니다.', tags: ['#전략이안내려옴', '#방향이불분명', '#메세지불일치'], targets: ['#전사', '#임원', '#팀장'], point: '전략 자체의 문제보다는, 이를 현장에 전달하는 "번역"과 "소통 구조"의 부재를 해결해야 합니다.', solutions: ['1.1.1.1', '1.1.1.2', '1.1.1.3'] }, { main: 'A. 전략방향->실행', mid: 'A-1. 전략방향 공유', sub: '우선순위 기준 부재', sentence: '무엇부터 해야 할지 기준이 없습니다.', tags: ['#우선순위모호', '#일이많음', '#선택이어려움'], targets: ['#임원', '#팀장', '#본부/사업부'], point: '업무 과부하가 아니라 "선택과 집중"을 위한 명확한 의사결정 기준이 부재한 상태입니다.', solutions: ['1.2.1.2', '1.1.1.2'] }, { main: 'A. 전략방향->실행', mid: 'A-2. 실행력 강화', sub: '실행 동기 부족', sentence: '왜 해야 하는지 공감이 되지 않아 움직이지 않습니다.', tags: ['#동기부여실패', '#수동적태도', '#패배의식'], targets: ['#팀장', '#팀원'], point: 'Top-down 지시가 아닌 구성원의 참여를 통해 실행의 "Why"를 공유해야 합니다.', solutions: ['1.1.1.3'] }, { main: 'B. 리더십->소통', mid: 'B-1. 성과 관리', sub: '피드백 부재', sentence: '열심히 해도 인정받지 못하고, 무엇을 고쳐야 할지 모릅니다.', tags: ['#피드백없음', '#성장정체', '#불만누적'], targets: ['#팀장', '#파트장'], point: '평가 시점의 통보가 아닌, 상시적인 성과 관리와 육성 관점의 피드백 스킬이 필요합니다.', solutions: ['1.2.1.1'] }, { main: 'B. 리더십->소통', mid: 'B-2. 조직 문화', sub: '수직적 문화', sentence: '상사 눈치 보느라 자유로운 의견 개진이 어렵습니다.', tags: ['#눈치문화', '#침묵', '#혁신저해'], targets: ['#전사', '#임원'], point: '심리적 안전감을 조성하여 구성원이 두려움 없이 의견을 말할 수 있는 문화를 만들어야 합니다.', solutions: ['1.1.1.1', '1.1.1.3'] } ];
+
+        const mainSelect = document.getElementById('mainCat'); const midSelect = document.getElementById('midCat'); const subSelect = document.getElementById('subCat'); const resultContainer = document.getElementById('resultContainer');
+        const uniqueMainCats = [...new Set(scenarios.map(s => s.main))];
+        
+        function init() { uniqueMainCats.forEach(cat => { const option = document.createElement('option'); option.value = cat; option.textContent = cat; mainSelect.appendChild(option); }); }
+
+        mainSelect.addEventListener('change', (e) => { const selectedMain = e.target.value; midSelect.innerHTML = '<option value="">Select Sub-Category</option>'; subSelect.innerHTML = '<option value="">Select Issue</option>'; subSelect.disabled = true; resultContainer.style.display = 'none'; if (!selectedMain) { midSelect.disabled = true; return; } const relatedMids = [...new Set(scenarios.filter(s => s.main === selectedMain).map(s => s.mid))]; relatedMids.forEach(mid => { const option = document.createElement('option'); option.value = mid; option.textContent = mid; midSelect.appendChild(option); }); midSelect.disabled = false; });
+        midSelect.addEventListener('change', (e) => { const selectedMain = mainSelect.value; const selectedMid = e.target.value; subSelect.innerHTML = '<option value="">Select Issue</option>'; resultContainer.style.display = 'none'; if (!selectedMid) { subSelect.disabled = true; return; } const relatedSubs = scenarios.filter(s => s.main === selectedMain && s.mid === selectedMid).map(s => s.sub); relatedSubs.forEach(sub => { const option = document.createElement('option'); option.value = sub; option.textContent = sub; subSelect.appendChild(option); }); subSelect.disabled = false; });
+        subSelect.addEventListener('change', (e) => { const selectedSub = e.target.value; if (!selectedSub) { resultContainer.style.display = 'none'; return; } const matchedScenario = scenarios.find(s => s.main === mainSelect.value && s.mid === midSelect.value && s.sub === selectedSub); if (matchedScenario) { renderResult(matchedScenario); } });
+
+        function renderResult(data) {
+            resultContainer.style.display = 'block';
+            document.getElementById('customerSentence').textContent = `"${data.sentence}"`;
+            document.getElementById('recommendationText').textContent = data.point;
+            
+            const tagsContainer = document.getElementById('tagsContainer');
+            tagsContainer.innerHTML = '';
+            [...data.tags, ...data.targets].forEach(tag => { const span = document.createElement('span'); span.textContent = tag; tagsContainer.appendChild(span); });
+
+            const solutionGrid = document.getElementById('solutionGrid');
+            solutionGrid.innerHTML = '';
+            data.solutions.forEach(code => {
+                const sol = solutionDB[code];
+                if(sol) {
+                    const item = document.createElement('div');
+                    item.className = 'solution-item';
+                    item.innerHTML = `
+                        <div class="sol-left">
+                            <span class="sol-type">${sol.type}</span>
+                            <span class="sol-cat">${sol.category}</span>
+                        </div>
+                        <span class="sol-right">${code}</span>
+                    `;
+                    solutionGrid.appendChild(item);
+                }
+            });
+        }
+        init();
+    </script>
+</body>
+</html>

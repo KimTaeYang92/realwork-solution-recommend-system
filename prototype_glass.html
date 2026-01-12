@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solution Finder - Glass</title>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: #333;
+        }
+
+        .glass-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            width: 100%;
+            max-width: 1000px;
+            height: 90vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 320px;
+            padding: 2rem;
+            border-right: 1px solid rgba(255,255,255,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        h1 {
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.4);
+            color: #333;
+            font-size: 1rem;
+            backdrop-filter: blur(5px);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        select:hover {
+            background: rgba(255,255,255,0.6);
+        }
+
+        select:focus {
+            outline: none;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.2);
+        }
+
+        /* Main */
+        main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            opacity: 0.5;
+            color: #fff;
+            text-align: center;
+            margin-top: 30%;
+        }
+
+        .result-box {
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .diagnosis-card {
+            background: rgba(255,255,255,0.6);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .bubble {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 20px;
+            border-bottom-left-radius: 0;
+            position: relative;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #444;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+        }
+
+        .chip {
+            display: inline-block;
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .solution-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,0.4);
+            border: 1px solid rgba(255,255,255,0.6);
+            padding: 1rem;
+            border-radius: 12px;
+            transition: 0.3s;
+        }
+
+        .glass-card:hover {
+            background: rgba(255,255,255,0.8);
+            transform: scale(1.02);
+        }
+
+        .glass-card h3 {
+            font-size: 1rem;
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-container">
+        <aside>
+            <h1>🔮 Insight</h1>
+            <div class="control-group">
+                <label>Category</label>
+                <select id="mainCat"><option value="">Select...</option></select>
+            </div>
+            <div class="control-group">
+                <label>Sub-Category</label>
+                <select id="midCat" disabled><option value="">Select...</option></select>
+            </div>
+            <div class="control-group">
+                <label>Problem</label>
+                <select id="subCat" disabled><option value="">Select...</option></select>
+            </div>
+        </aside>
+
+        <main>
+            <div id="emptyState" class="empty-icon">Select Options</div>
+            
+            <div id="resultContainer" class="result-box">
+                <div class="diagnosis-card">
+                    <div class="bubble" id="customerSentence">Sentence</div>
+                    <div id="tagsContainer"></div>
+                    <p id="recommendationText" style="margin-top:1rem; color:#555;">Recommendation</p>
+                </div>
+
+                <h3 style="color:#fff; margin-bottom:1rem;">Solutions</h3>
+                <div id="solutionGrid" class="solution-grid"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Data & Logic (Compressed for brevity as logic is identical)
+        const solutionDB = { '1.1.1.1': { area: '조직개발', method: 'Consulting', category: '조직개발컨설팅', type: '조직진단 및 솔루션 도출' }, '1.1.1.2': { area: '조직개발', method: 'Consulting', category: '조직개발컨설팅', type: '조직방향 수립 컨설팅' }, '1.1.1.3': { area: '조직개발', method: 'Workshop', category: '워크숍', type: '비전/가치 내재화 워크숍' }, '1.2.1.1': { area: '리더십', method: 'Training', category: '팀장리더십', type: '성과관리 코칭 스킬' }, '1.2.1.2': { area: '리더십', method: 'Training', category: '임원리더십', type: '전략적 의사결정 과정' }, '2.1.1.1': { area: 'HR제도', method: 'System', category: '평가보상', type: 'KPI 고도화 컨설팅' }, '2.1.1.2': { area: 'HR제도', method: 'System', category: '채용', type: '채용 브랜딩 전략' } };
+        const scenarios = [ { main: 'A. 전략방향->실행', mid: 'A-1. 전략방향 공유', sub: '전략 전달 부재', sentence: '전략과 방향이 현장 언어로 내려오지 않습니다.', tags: ['#전략이안내려옴', '#방향이불분명', '#메세지불일치'], targets: ['#전사', '#임원', '#팀장'], point: '전략 자체의 문제보다는, 이를 현장에 전달하는 "번역"과 "소통 구조"의 부재를 해결해야 합니다.', solutions: ['1.1.1.1', '1.1.1.2', '1.1.1.3'] }, { main: 'A. 전략방향->실행', mid: 'A-1. 전략방향 공유', sub: '우선순위 기준 부재', sentence: '무엇부터 해야 할지 기준이 없습니다.', tags: ['#우선순위모호', '#일이많음', '#선택이어려움'], targets: ['#임원', '#팀장', '#본부/사업부'], point: '업무 과부하가 아니라 "선택과 집중"을 위한 명확한 의사결정 기준이 부재한 상태입니다.', solutions: ['1.2.1.2', '1.1.1.2'] }, { main: 'A. 전략방향->실행', mid: 'A-2. 실행력 강화', sub: '실행 동기 부족', sentence: '왜 해야 하는지 공감이 되지 않아 움직이지 않습니다.', tags: ['#동기부여실패', '#수동적태도', '#패배의식'], targets: ['#팀장', '#팀원'], point: 'Top-down 지시가 아닌 구성원의 참여를 통해 실행의 "Why"를 공유해야 합니다.', solutions: ['1.1.1.3'] }, { main: 'B. 리더십->소통', mid: 'B-1. 성과 관리', sub: '피드백 부재', sentence: '열심히 해도 인정받지 못하고, 무엇을 고쳐야 할지 모릅니다.', tags: ['#피드백없음', '#성장정체', '#불만누적'], targets: ['#팀장', '#파트장'], point: '평가 시점의 통보가 아닌, 상시적인 성과 관리와 육성 관점의 피드백 스킬이 필요합니다.', solutions: ['1.2.1.1'] }, { main: 'B. 리더십->소통', mid: 'B-2. 조직 문화', sub: '수직적 문화', sentence: '상사 눈치 보느라 자유로운 의견 개진이 어렵습니다.', tags: ['#눈치문화', '#침묵', '#혁신저해'], targets: ['#전사', '#임원'], point: '심리적 안전감을 조성하여 구성원이 두려움 없이 의견을 말할 수 있는 문화를 만들어야 합니다.', solutions: ['1.1.1.1', '1.1.1.3'] } ];
+
+        const mainSelect = document.getElementById('mainCat'); const midSelect = document.getElementById('midCat'); const subSelect = document.getElementById('subCat'); const resultContainer = document.getElementById('resultContainer'); const emptyState = document.getElementById('emptyState');
+        const uniqueMainCats = [...new Set(scenarios.map(s => s.main))];
+        
+        function init() { uniqueMainCats.forEach(cat => { const option = document.createElement('option'); option.value = cat; option.textContent = cat; mainSelect.appendChild(option); }); }
+
+        mainSelect.addEventListener('change', (e) => { const selectedMain = e.target.value; midSelect.innerHTML = '<option value="">Select...</option>'; subSelect.innerHTML = '<option value="">Select...</option>'; subSelect.disabled = true; resultContainer.style.display = 'none'; emptyState.style.display = 'block'; if (!selectedMain) { midSelect.disabled = true; return; } const relatedMids = [...new Set(scenarios.filter(s => s.main === selectedMain).map(s => s.mid))]; relatedMids.forEach(mid => { const option = document.createElement('option'); option.value = mid; option.textContent = mid; midSelect.appendChild(option); }); midSelect.disabled = false; });
+        midSelect.addEventListener('change', (e) => { const selectedMain = mainSelect.value; const selectedMid = e.target.value; subSelect.innerHTML = '<option value="">Select...</option>'; resultContainer.style.display = 'none'; emptyState.style.display = 'block'; if (!selectedMid) { subSelect.disabled = true; return; } const relatedSubs = scenarios.filter(s => s.main === selectedMain && s.mid === selectedMid).map(s => s.sub); relatedSubs.forEach(sub => { const option = document.createElement('option'); option.value = sub; option.textContent = sub; subSelect.appendChild(option); }); subSelect.disabled = false; });
+        subSelect.addEventListener('change', (e) => { const selectedSub = e.target.value; if (!selectedSub) { resultContainer.style.display = 'none'; emptyState.style.display = 'block'; return; } const matchedScenario = scenarios.find(s => s.main === mainSelect.value && s.mid === midSelect.value && s.sub === selectedSub); if (matchedScenario) { renderResult(matchedScenario); } });
+
+        function renderResult(data) {
+            emptyState.style.display = 'none'; resultContainer.style.display = 'block';
+            document.getElementById('customerSentence').textContent = `"${data.sentence}"`;
+            document.getElementById('recommendationText').textContent = data.point;
+            const tagsContainer = document.getElementById('tagsContainer');
+            tagsContainer.innerHTML = '';
+            [...data.tags, ...data.targets].forEach(tag => { const span = document.createElement('span'); span.className = 'chip'; span.textContent = tag; tagsContainer.appendChild(span); });
+            const solutionGrid = document.getElementById('solutionGrid');
+            solutionGrid.innerHTML = '';
+            data.solutions.forEach(code => {
+                const sol = solutionDB[code];
+                if(sol) {
+                    const card = document.createElement('div'); card.className = 'glass-card';
+                    card.innerHTML = `<h3>${sol.type}</h3><div style="font-size:0.8rem; color:#666;">${sol.category}</div>`;
+                    solutionGrid.appendChild(card);
+                }
+            });
+        }
+        init();
+    </script>
+</body>
+</html>
