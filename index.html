@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>리더메이트 롤플레잉 실습</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface2: #f1f3f7;
+  --border: #e2e6ed;
+  --border2: #cbd2dc;
+  --accent: #4f46e5;
+  --accent-glow: rgba(79,70,229,0.15);
+  --accent2: #7c3aed;
+  --green: #059669;
+  --green-dim: rgba(5,150,105,0.08);
+  --yellow: #d97706;
+  --yellow-dim: rgba(217,119,6,0.08);
+  --red: #dc2626;
+  --red-dim: rgba(220,38,38,0.07);
+  --text: #111827;
+  --text-muted: #4b5563;
+  --text-dim: #9ca3af;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+/* ── SPLASH SCREEN ── */
+#splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: #ffffff;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0;
+}
+.splash-title {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 900;
+  font-size: clamp(32px, 5vw, 56px);
+  letter-spacing: -0.02em;
+  color: #111827;
+  text-align: center;
+  line-height: 1.2;
+  margin-bottom: 36px;
+}
+.splash-title span { color: var(--accent); }
+.splash-btn {
+  background: var(--accent);
+  border: none; border-radius: 12px;
+  color: white;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 16px; font-weight: 700;
+  padding: 14px 48px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(79,70,229,0.3);
+  letter-spacing: 0.02em;
+}
+.splash-btn:hover { background: #4338ca; transform: translateY(-2px); box-shadow: 0 8px 28px rgba(79,70,229,0.38); }
+.splash-btn:active { transform: translateY(0); }
+.splash-credit {
+  position: absolute; bottom: 32px;
+  font-size: 11px; color: #9ca3af;
+  letter-spacing: 0.12em;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+}
+.splash-credit span { color: #6b7280; }
+
+/* ── APP ── */
+#app { display: none; }
+
+/* PROGRESS */
+.progress-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 200; background: var(--border); }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.5s ease; width: 0%; }
+
+/* HEADER */
+.header {
+  position: fixed; top: 3px; left: 0; right: 0; z-index: 100;
+  background: rgba(255,255,255,0.97); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 36px; height: 68px;
+  display: flex; align-items: center; gap: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.header-logo {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  color: #111827;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.header-logo span { color: var(--accent); }
+.header-divider { width: 1px; height: 26px; background: var(--border2); flex-shrink: 0; }
+.header-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+/* NAV TABS */
+.nav-tabs {
+  position: fixed; top: 71px; left: 0; right: 0; z-index: 99;
+  background: #ffffff; border-bottom: 1px solid var(--border);
+  display: flex; overflow-x: auto; scrollbar-width: none; padding: 0 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.nav-tabs::-webkit-scrollbar { display: none; }
+.nav-tab {
+  flex-shrink: 0; background: none; border: none;
+  color: #6b7280; font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px; font-weight: 500; padding: 13px 18px;
+  cursor: pointer; position: relative; transition: color 0.2s;
+  white-space: nowrap; display: flex; align-items: center; gap: 6px;
+}
+.nav-tab:hover { color: #111827; }
+.nav-tab.active { color: var(--accent); }
+.nav-tab.active::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; background: var(--accent); border-radius: 2px 2px 0 0;
+}
+.nav-tab .tab-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #9ca3af; }
+.nav-tab.active .tab-num { color: var(--accent2); }
+.debate-tab { color: var(--yellow) !important; border-left: 1px solid var(--border2); margin-left: 8px; padding-left: 22px; }
+.debate-tab.active { color: var(--yellow) !important; }
+.debate-tab.active::after { background: var(--yellow) !important; }
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; }
+
+/* MEMBER LAYOUT */
+.member-layout {
+  padding-top: 137px;
+  display: grid; grid-template-columns: 380px 1fr; min-height: 100vh;
+}
+
+/* BRIEF PANEL */
+.brief-panel {
+  position: sticky; top: 137px; height: calc(100vh - 137px);
+  overflow-y: auto; border-right: 1px solid var(--border);
+  background: #ffffff;
+  padding: 28px 26px; scrollbar-width: thin; scrollbar-color: #e2e6ed transparent;
+}
+.brief-panel::-webkit-scrollbar { width: 3px; }
+.brief-panel::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.brief-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.brief-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.brief-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 3px;
+}
+.brief-client-name { font-size: 20px; font-weight: 800; line-height: 1.2; color: #111827; }
+.brief-divider { height: 1px; background: var(--border); margin: 14px 0; }
+.brief-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 11px; }
+.brief-key {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: #9ca3af; flex-shrink: 0; margin-top: 2px; min-width: 48px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.brief-val { color: #374151; line-height: 1.7; font-size: 13px; font-weight: 500; }
+.brief-email { color: var(--accent); font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+.headcount {
+  display: inline-flex; align-items: center;
+  background: #ede9fe; border: 1px solid #c4b5fd;
+  border-radius: 6px; padding: 2px 12px;
+  font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--accent);
+}
+.needs-box {
+  background: #f0fdf4; border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm); padding: 16px;
+  font-size: 13px; line-height: 1.9; color: #1f2937; margin-top: 4px;
+}
+.needs-box strong { color: #1f2937; font-weight: 600; }
+
+/* STEPS PANEL */
+.steps-panel { padding: 28px 34px 70px; max-width: 780px; }
+.steps-progress { display: flex; align-items: center; gap: 6px; margin-bottom: 24px; }
+.sp-dot { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; transition: all 0.3s; }
+.sp-dot.done { background: var(--green); }
+.sp-dot.active { background: var(--accent); transform: scale(1.5); box-shadow: 0 0 6px rgba(79,70,229,0.4); }
+.sp-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9ca3af; margin-left: 8px; }
+
+.step-card {
+  background: #ffffff; border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 10px;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.step-card.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow), 0 4px 16px rgba(79,70,229,0.1); }
+.step-card.done { border-color: #6ee7b7; background: #f0fdf4; }
+.step-card.locked { opacity: 0.4; pointer-events: none; }
+
+.step-head { padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
+.step-num {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+  background: #f3f4f6; border: 1px solid #e5e7eb; color: #9ca3af;
+}
+.step-card.active .step-num { background: var(--accent); border-color: var(--accent); color: white; }
+.step-card.done .step-num { background: #d1fae5; border-color: #6ee7b7; color: var(--green); }
+.step-info { flex: 1; }
+.step-title { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 2px; }
+.step-status { font-size: 11px; color: #9ca3af; font-family: 'JetBrains Mono', monospace; }
+.step-card.active .step-status { color: var(--accent); }
+.step-card.done .step-status { color: var(--green); }
+.step-body { display: none; padding: 0 18px 18px; border-top: 1px solid #f3f4f6; }
+.step-card.active .step-body, .step-card.done .step-body { display: block; }
+
+.checklist { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; }
+.check-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 14px; background: #f9fafb;
+  border: 1px solid #e5e7eb; border-radius: var(--radius-sm);
+  cursor: pointer; transition: border-color 0.2s, background 0.2s; user-select: none;
+}
+.check-item:hover { border-color: #d1d5db; background: #f3f4f6; }
+.check-item.checked { background: #f0fdf4; border-color: #86efac; }
+.check-box {
+  width: 18px; height: 18px; border-radius: 5px; border: 2px solid #d1d5db;
+  flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; font-size: 11px; color: transparent;
+}
+.check-item.checked .check-box { background: var(--green); border-color: var(--green); color: white; }
+.check-text { font-size: 12.5px; line-height: 1.7; color: #4b5563; }
+.check-item.checked .check-text { color: #111827; }
+.check-sub { font-size: 11px; color: #9ca3af; margin-top: 2px; font-style: italic; }
+.check-progress {
+  display: flex; align-items: center; gap: 10px; margin-top: 12px;
+  padding: 10px 14px; background: #f9fafb; border-radius: var(--radius-sm);
+  border: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;
+}
+.check-progress-bar { flex: 1; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
+.check-progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.3s; }
+
+.btn-next {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #f3f4f6; border: 1px solid #e5e7eb;
+  border-radius: var(--radius-sm); color: #374151;
+  font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 600;
+  padding: 10px 20px; cursor: pointer; transition: all 0.2s; margin-top: 14px;
+}
+.btn-next:not([disabled]):hover { border-color: var(--accent); color: var(--accent); background: #eef2ff; transform: translateY(-1px); }
+.btn-next[disabled] { opacity: 0.35; cursor: not-allowed; }
+.arr { transition: transform 0.2s; }
+.btn-next:not([disabled]):hover .arr { transform: translateX(4px); }
+
+.complete-banner {
+  background: #f0fdf4; border: 1px solid #86efac;
+  border-radius: var(--radius); padding: 28px; text-align: center;
+  margin-top: 8px; animation: fadeUp 0.5s ease;
+}
+.complete-banner .icon { font-size: 36px; margin-bottom: 10px; }
+.complete-title { font-family: 'Noto Sans KR', sans-serif; font-weight: 900; font-size: 22px; color: var(--green); margin-bottom: 8px; }
+.complete-sub { font-size: 13px; color: #4b5563; line-height: 1.7; }
+.complete-sub strong { color: var(--accent); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── DEBATE PAGE ── */
+.debate-page { padding-top: 137px; padding-bottom: 80px; max-width: 920px; margin: 0 auto; padding-left: 40px; padding-right: 40px; background: var(--bg); }
+.debate-header { margin-bottom: 26px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+.debate-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: #b45309; margin-bottom: 10px; }
+.debate-main-title {
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 900;
+  font-size: 32px; letter-spacing: -0.02em;
+  color: #111827; margin-bottom: 10px; line-height: 1.2;
+}
+.debate-desc { font-size: 13px; color: #4b5563; line-height: 1.8; max-width: 640px; }
+
+.scenario-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+.scenario-btn {
+  background: #ffffff; border: 1px solid var(--border);
+  border-radius: 8px; color: #4b5563;
+  font-family: 'Noto Sans KR', sans-serif; font-size: 12px; font-weight: 500;
+  padding: 7px 14px; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.scenario-btn:hover { border-color: #9ca3af; color: #111827; }
+.scenario-btn.active { background: #fffbeb; border-color: var(--yellow); color: #92400e; font-weight: 600; }
+.s-count { font-family: 'JetBrains Mono', monospace; font-size: 10px; background: #f3f4f6; border-radius: 4px; padding: 1px 6px; color: #6b7280; }
+
+/* DEBATE PROBLEM CARD */
+.debate-problem { background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.dp-top { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 14px; background: #fafafa; }
+.dp-badge { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: 3px 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #dc2626; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+.dp-client { font-size: 11px; color: #9ca3af; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
+.dp-title { font-size: 15px; font-weight: 700; color: #111827; }
+
+.dp-situation { padding: 16px 22px; background: #fff7f7; border-bottom: 1px solid #fecaca; }
+.dp-speaker { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+.dp-situation-text { font-size: 13.5px; line-height: 1.9; color: #111827; border-left: 3px solid #ef4444; padding-left: 14px; font-weight: 500; }
+
+.dp-q { padding: 14px 22px; background: #fffbeb; border-bottom: 1px solid #fde68a; font-size: 13px; font-weight: 600; color: #92400e; line-height: 1.7; }
+
+.dp-comments { padding: 18px 22px; background: #ffffff; }
+.comments-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.comments-title { font-size: 12px; font-weight: 600; color: #374151; }
+.comment-counter { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9ca3af; }
+
+.comment-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.comment-item { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: var(--radius-sm); padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
+.comment-item.submitted { background: #eef2ff; border-color: #c7d2fe; }
+.comment-avatar { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; }
+.comment-name { font-size: 11px; font-weight: 600; color: #4b5563; margin-bottom: 4px; }
+.comment-text { font-size: 13px; line-height: 1.7; color: #111827; word-break: break-word; }
+.comment-placeholder { font-size: 12px; color: #9ca3af; font-style: italic; padding: 10px 0; text-align: center; }
+
+.comment-input-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.member-selector { background: #ffffff; border: 1px solid #e5e7eb; border-radius: var(--radius-sm); color: #111827; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; padding: 9px 12px; cursor: pointer; outline: none; flex-shrink: 0; width: 96px; transition: border-color 0.2s; }
+.member-selector:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.comment-textarea { flex: 1; background: #ffffff; border: 1px solid #e5e7eb; border-radius: var(--radius-sm); color: #111827; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; line-height: 1.7; padding: 10px 14px; resize: vertical; min-height: 80px; outline: none; transition: border-color 0.2s; }
+.comment-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.btn-comment-submit { background: var(--accent); border: none; border-radius: var(--radius-sm); color: white; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; font-weight: 600; padding: 10px 16px; cursor: pointer; transition: background 0.2s, transform 0.1s; white-space: nowrap; align-self: flex-end; flex-shrink: 0; }
+.btn-comment-submit:hover { background: #4338ca; transform: translateY(-1px); }
+
+.all-done-msg { text-align: center; padding: 12px; font-size: 12px; color: var(--green); background: #f0fdf4; border: 1px solid #86efac; border-radius: var(--radius-sm); margin-bottom: 10px; }
+
+.reveal-gate { display: flex; align-items: center; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--border); background: #f9fafb; font-size: 12px; color: #6b7280; }
+.reveal-gate-bar { flex: 1; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
+.reveal-gate-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s; }
+
+.dp-reveal { display: none; padding: 18px 22px; border-top: 1px solid #86efac; background: #f0fdf4; animation: fadeUp 0.4s ease; }
+.dp-reveal.visible { display: block; }
+.dp-reveal-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--green); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.dp-reveal-label::before { content: '✓'; }
+.dp-reveal-body { font-size: 13px; line-height: 1.85; color: #374151; }
+.dp-reveal-body strong { color: #111827; font-weight: 700; }
+
+@media (max-width: 768px) {
+  .member-layout { grid-template-columns: 1fr; padding-top: 127px; }
+  .brief-panel { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .steps-panel { padding: 20px 16px 50px; }
+  .header { padding: 0 18px; }
+  .header-logo { font-size: 15px; }
+  .debate-page { padding: 137px 16px 60px; }
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-title">리더메이트<br><span>롤플레잉 실습</span></div>
+  <button class="splash-btn" onclick="startApp()">시작하기</button>
+  <div class="splash-credit">REALWORK &nbsp;·&nbsp; <span>made by Lucy</span></div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <header class="header">
+    <div class="header-logo">리더메이트 <span>×</span> 팀효과성 롤플레잉 운영 실습</div>
+  </header>
+
+  <nav class="nav-tabs" id="navTabs"></nav>
+  <div id="memberPages"></div>
+
+  <div class="page" id="pageDebate" style="background:#f4f6f9;min-height:100vh;">
+    <div class="debate-page">
+      <div class="debate-header">
+        <div class="debate-eyebrow">⚡ Team Discussion</div>
+        <div class="debate-main-title">문제상황 — 팀 토론</div>
+        <div class="debate-desc">각 케이스에서 발생한 문제상황을 전체 팀이 함께 논의해보세요. 이름을 선택하고 의견을 작성한 뒤 제출하면, <strong style="color:#4f46e5;">6명 모두 제출 완료 시</strong> 확인 포인트가 공개됩니다.</div>
+      </div>
+      <div id="debateContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── DATA ── */
+const MEMBERS = [
+  { name:"콰지", color:"#6366f1", client:"구글코리아", manager:"인재개발팀 신민주 매니저", headcount:32,
+    situation:"최근 급성장하며 조직 구조가 개편되어 리더들의 역할이 모호해진 상황입니다.",
+    needs:"전사 리더 대상의 '전략 공감 워크숍'이 필요합니다. 리더들이 목표 수립과 방향성 제시 기준을 세우는 것에 그치지 않고, 워크숍 현장에서 각자의 구체적인 '액션플랜'을 수립하고, 현업에 돌아가서도 꾸준히 실행할 수 있도록 지속적인 '리마인드' 과정이 포함되어야 합니다.",
+    problems:[
+      { title:"액션플랜 미작성자 강제 발송 요구", speaker:"담당자 신민주 매니저",
+        situation:"컨설턴트님, 미작성자 분들께 따로 독려 메일까지 보냈는데 끝내 3분의 리더께서 액션플랜을 안 적어주셨네요. 그래도 워낙 바쁘신 분들이니 어쩔 수 없죠. 당장 내일 첫 번째 랩업 레터가 나가야 하는데, 첫 메일은 액션플랜 내용이 없어도 요약본이니 괜찮잖아요? 액션플랜 없어도 되니까 그냥 이 3분도 포함해서 메일 보내주세요.",
+        question:"이 담당자의 요청을 들어줄 수 있을까요? 어떻게 답변하시겠어요?",
+        answer:"리더메이트 업데이트 기준에 따라 <strong>액션플랜을 작성하지 않은 참여자는 레터 생성 대상에서 자동 제외</strong>되어 발송 자체가 불가하다는 점을 명확하게 설명합니다." },
+      { title:"메일 수신 오류 및 마감일 긴급 독려", speaker:"담당자 신민주 매니저",
+        situation:"컨설턴트님, 아침까지만 해도 리더분들이 메일을 잘 열고 응답하셨거든요? 그런데 오후부터 갑자기 몇몇 분들이 메일이 안 열린다고 연락이 오네요. 문제는 당장 오늘이 응답 마감일이라 미응답자분들께 빨리 독려해서 오늘 안에 끝내야 하는데.. 당장 어떻게 조치해야 할까요?",
+        question:"일시적인 메일 오픈 장애 상황에서 마감이 임박했을 때, 즉각적인 대안 액션을 어떻게 제안해야 할까요?",
+        answer:"마감이 임박하므로 원인 파악을 기다리기보다 <strong>바로 접속 가능한 '설문링크(URL)'</strong>를 담당자에게 공유하여, 미응답자들에게 <strong>사내 메신저나 문자(SMS)로 직접 공유해 모바일로 접속</strong>하도록 안내해 달라고 제안합니다." }
+    ]},
+  { name:"케이트", color:"#06b6d4", client:"넷플릭스", manager:"조직문화실 김태형 매니저", headcount:44,
+    situation:"조직 내 피드백 문화는 있으나, 최근 성과 평가 시즌 이후 일부 리더들의 피드백이 일방적 지시나 평가 위주로 전달되어 구성원들의 불만이 제기된 상황입니다.",
+    needs:"팀장들을 대상으로 '조직-사람-일' 관점에서의 '평가 피드백 특강 및 딥다이브 워크숍'을 진행하고 싶습니다. 현장에서 배운 피드백 스킬을 본인 팀에 맞게 '액션플랜'으로 작성하게 하고, 바쁜 업무 중에도 결심이 흐지부지되지 않도록 주기적으로 '리마인드' 해주는 장치가 필요합니다.",
+    problems:[
+      { title:"워크숍 현장 모니터링 이슈", speaker:"FT 빌리",
+        situation:"케이트! 지금 현장에서 참여자분들이 스마트폰으로 리더메이트에 접속해서 액션플랜을 작성하고 제출하고 계시거든요. 그런데 제가 대시보드로 현황을 확인하려고 보니까, 화면에는 아무도 제출하지 않은 걸로 뜨는데 어떻게 해야 하죠?",
+        question:"현황 보드에 제출 내역이 즉각 반영되지 않는 원인은 어떻게 추정해볼 수 있으며, 현장에서 어떻게 대응해야 할까요?",
+        answer:"워크숍 현장에서의 실시간 입력 현황은 <strong>자동으로 업데이트되지 않으므로 수동으로 [새로고침]</strong>해야 한다고 안내합니다. 여러 번 새로고침해도 갱신되지 않는다면 서버 지연이나 에러일 수 있으므로 <strong>즉시 &lt;루시&gt;에게 확인 요청</strong>합니다." }
+    ]},
+  { name:"레이첼", color:"#ec4899", client:"테슬라", manager:"HR운영팀 최윤아 매니저", headcount:35,
+    situation:"최근 실시한 전사 리더 대상 다면진단 결과, 상하급자 간의 신뢰도 수치가 전반적으로 다소 하락한 것으로 나타났습니다.",
+    needs:"다면진단 결과를 바탕으로 한 '팔로업 성찰 워크숍'을 원합니다. 진단 결과를 객관적으로 수용하고 1on1 면담을 준비하는 성찰의 시간에 더해, 구체적인 변화를 이끌어낼 '액션플랜'을 수립하게 한 뒤 '리마인드' 해주는 과정이 필수적입니다.",
+    problems:[
+      { title:"사전 테스트 메일 수신 불가", speaker:"담당자 최윤아 매니저",
+        situation:"아까 발송해 주셨다는 사전 테스트 메일이요. 제가 방금 확인해 봤는데 안 와있고, 혹시 몰라서 스팸함까지 다 찾아봤는데도 메일이 아예 없네요. 발송해 주신 게 맞나요? 왜 이런 건지 이유를 알 수 있을까요?",
+        question:"메일이 수신되지 않는 원인을 어떻게 추정해볼 수 있으며, 담당자에게 어떤 액션을 요청해야 할까요?",
+        answer:"<strong>고객사 메일 보안 정책에 따라 리더메이트 도메인이 차단되었을 확률</strong>을 추정합니다. 담당자에게 사내 보안팀을 통해 <strong>리더메이트 도메인(leadermate9.vercel.app)이 화이트리스트에 허용</strong>되도록 확인을 요청합니다." }
+    ]},
+  { name:"이든", color:"#f59e0b", client:"애플코리아", manager:"HR 비즈니스 파트너 이수진 리더", headcount:40,
+    situation:"실무에서 뛰어난 성과를 내던 핵심 인재들이 신임 팀장으로 대거 발탁되어 역할 전환기를 맞았으나, 팀원 소통과 팀 운영의 기본기에 어려움을 겪고 있습니다.",
+    needs:"단순한 리더십 교육이 아니라, 팀원 이해와 효과적인 업무 소통 등 리더의 기본기를 탄탄히 다지는 워크숍을 원합니다. 팀 관리를 위한 자신만의 '액션플랜'을 세우고, 일상에서 실행을 포기하지 않도록 지속적으로 '리마인드' 해주는 사후 관리까지 챙겨주세요.",
+    problems:[
+      { title:"사전 프로파일링 참여율 저조", speaker:"담당자 이수진 리더",
+        situation:"내일이 워크숍인데 큰일 났네요. 방금 확인해 보니 프로파일링 참여율이 아직 절반밖에 안 돼요. 리더분들이 워낙 바쁘셔서 잊어버리신 것 같은데, 남은 시간 동안 이걸 좀 효과적으로 독려할 수 있는 방법이 따로 없을까요?",
+        question:"참여율 저조에 따른 조치로 시스템 데이터를 어떻게 활용할 수 있으며, 담당자에게 어떤 독려 방법을 제안해야 할까요?",
+        answer:"<strong>'이메일 오픈 트래킹' 기능으로 참여자의 메일 오픈 여부를 확인</strong>하고, 미응답자 대상으로 재발송을 안내합니다. (현재 메일 제목 수정 기능이 없으므로, 미참여자만 타겟팅 재발송 기능 개선이 필요하다는 점도 함께 공유)" },
+      { title:"도메인 이슈 — 개인 메일 수신 요청", speaker:"담당자 이수진 리더",
+        situation:"컨설턴트님, 이번에 참여하시는 리더분들 중에 세 분 정도가 개인적인 사유로 코칭레터를 회사 메일 말고 본인 개인 메일(네이버, 지메일 등)로 따로 받아보고 싶어 하시네요. 혹시 이 세 분만 개인 메일로 세팅해서 보내주시는 게 가능할까요?",
+        question:"이 요청을 수용할 경우 어떤 문제가 발생할 수 있으며, 어떻게 대응해야 할까요?",
+        answer:"개인 메일로 발송 자체는 가능하나, <strong>회사 관리에서 도메인을 추가하고 참가자가 이메일 주소 응답 시 도메인을 선택할 수 있는 옵션이 생긴다</strong>는 점을 담당자에게 명시해야 합니다. 그럼에도 진행할 것인지 확인이 필요합니다." }
+    ]},
+  { name:"벨라", color:"#10b981", client:"스타벅스코리아", manager:"교육기획파트 박지훈 파트장", headcount:32,
+    situation:"매장과 현장에서 발생하는 다양한 이해관계자 간의 마찰과 돌발 상황으로 인해 현장 관리자(리더 후보군)들이 큰 스트레스를 받고 있습니다.",
+    needs:"예비 현장 관리자들을 위한 '갈등 관리 워크숍'을 기획 중입니다. 현장에서 즉시 적용할 수 있는 해결책을 '액션플랜'으로 만들고, 실전에서 잊지 않고 시도해볼 수 있도록 일정 기간 '리마인드' 해주는 지원이 함께 이루어졌으면 합니다.",
+    problems:[
+      { title:"일부 참여자만 접속 불가", speaker:"담당자 박지훈 파트장",
+        situation:"분명히 며칠 전 저랑 테스트했을 때는 메일도 잘 오고 링크도 잘 열렸잖아요? 그런데 오늘 참여자 분들 중에서 유독 몇몇 리더분들이 링크 접속 자체가 아예 안 된다고 하시네요. 테스트도 다 마친 건데 왜 이분들만 안 되는 걸까요?",
+        question:"담당자 테스트는 정상이었으나 일부 인원만 접속 오류가 발생하는 원인은 어떻게 추정해볼 수 있으며, 어떤 액션을 요청해야 할까요?",
+        answer:"본사와 지사는 <strong>다른 네트워크 대역(IP 범위)을 사용</strong>할 수 있고, 지사별 네트워크 보안 정책에 따라 해당 도메인이 차단되었을 가능성이 있습니다. 담당자에게 <strong>접속이 안 되는 인원들이 위치한 지사의 도메인 허용 여부를 사내 보안팀에 문의</strong>해 달라고 요청합니다." },
+      { title:"참여자 명단 지연 전달", speaker:"담당자 박지훈 파트장",
+        situation:"저희가 워크숍 명단 결재가 늦어져서 아직 픽스가 안 됐어요. 아마 5분 정도가 나중에 더 추가될 것 같은데... 일단 있는 명단으로 먼저 진행해 주시고, 추가되는 5분 명단은 저희가 확정되는 대로 추후에 다시 알려드려도 될까요?",
+        question:"명단 지연 전달 시 운영상 어떤 영향을 미칠 수 있으며, 담당자에게 기한을 어떻게 안내해야 할까요?",
+        answer:"가능합니다. 단, <strong>해당 프로젝트 화면에서 참가자를 직접 추가</strong>해야 합니다(엑셀 업로드 기능은 현재 없음). <strong>프로파일링 응답은 조속히 완료해야 하므로 워크숍 전 빠른 시일 내 회신</strong>을 주시도록 안내합니다." }
+    ]},
+  { name:"피오", color:"#a78bfa", client:"아마존", manager:"리더십개발센터 정우진 프로", headcount:31,
+    situation:"각 팀의 단기 성과 달성률은 높으나, 업무 강도로 인해 번아웃을 호소하는 구성원이 늘어나고 있어 장기적인 팀 몰입도 저하가 우려됩니다.",
+    needs:"단순한 성과 독려가 아닌, 구성원 몰입과 시너지를 돕는 '팀 개발 워크숍'이 필요합니다. 리더들이 구성원 동기부여와 비효율 개선에 대해 논의한 것을 '액션플랜'으로 확정 짓고, 워크숍 이후에도 잊지 않고 실천할 수 있도록 '리마인드' 해주는 사후 관리를 꼭 포함시켜 주세요.",
+    problems:[
+      { title:"사내망 보안 차단 — 설문 링크 접속 불가", speaker:"담당자 정우진 프로",
+        situation:"컨설턴트님, 보내주신 테스트 메일은 제 사내 메일함에 무사히 잘 들어왔습니다. 그런데 메일 내용에 있는 '설문 링크'를 클릭하니까 사이트에 연결할 수 없다고 뜨면서 페이지가 안 보이네요. 메일은 정상적으로 왔는데 링크만 안 열리는 건 왜 그런 걸까요?",
+        question:"메일은 정상 수신되었으나 링크 접속만 불가능한 원인은 어떻게 추정해볼 수 있으며, 담당자가 즉석에서 직접 확인해볼 수 있도록 어떤 액션을 요청해야 할까요?",
+        answer:"<strong>네트워크망 문제인지 확인을 위해 '모바일 데이터(LTE/5G)' 상태의 스마트폰으로 해당 링크를 접속해보라고 요청</strong>합니다. 모바일에서는 되지만 사내망에서만 안 열린다면 네트워크 차단 가능성이 높으므로, 사내 보안팀에 <strong>도메인(leadermate9.vercel.app) 화이트리스트 처리를 요청</strong>해 달라고 가이드합니다." }
+    ]}
+];
+
+const WORKFLOW = [
+  { step:"1단계", title:"사전 준비 및 메일 테스트", items:[
+    { text:"테스트 워크숍 프로젝트 생성", sub:"메일 서버 테스트용 임시 워크숍" },
+    { text:"고객사 담당자에게 테스트 메일 발송", sub:"설문/접속 링크 정상 오픈 여부 확인 포함" },
+    { text:"사내 보안 정책에 따른 도메인 차단 여부 확인", sub:"※ 매우 중요 — 사전 확인 필수" }
+  ]},
+  { step:"2단계", title:"명단 수집 및 세팅 협의", items:[
+    { text:"담당자에게 '팀 명단 템플릿' 전달 및 작성 요청" },
+    { text:"상위 리더 코칭레터 참조 발송 여부 담당자와 확인", sub:"원하지 않을 경우 상위 리더란 비우도록 안내" },
+    { text:"이메일 오픈 트래킹 설정 여부 사전 합의", sub:"목적(리마인드 및 운영 판단) 설명 후 설정" }
+  ]},
+  { step:"3단계", title:"시스템 등록 및 프로파일링 진행", items:[
+    { text:"워크숍 생성 — 회사 등록, 워크숍명 작성, 참여자 명단 업로드" },
+    { text:"사전 프로파일링 이메일 발송", sub:"워크숍 최소 전날까지 완료 독려" },
+    { text:"고객사 담당자에게 대시보드 계정 공유", sub:"관리시트에 계정 기입 필요" }
+  ]},
+  { step:"4단계", title:"워크숍 현장 지원", items:[
+    { text:"상위 리더 미발송 시 현장 장표·안내 자료 필터링" },
+    { text:"워크숍 마무리 단계에서 액션플랜(2~3개) 입력 안내" },
+    { text:"실시간 현황 수동 '새로고침'으로 모니터링" }
+  ]},
+  { step:"5단계", title:"워크숍 후속 관리 (1~2일 이내)", items:[
+    { text:"미참여자에게 '기한 내 미작성 시 레터 발송 불가' 명확 안내 후 링크 재발송" },
+    { text:"작성된 액션플랜 오탈자·맞춤법 데이터 정제" }
+  ]},
+  { step:"6단계", title:"코칭레터 1차(랩업) 준비 및 스케줄링", items:[
+    { text:"담당 FT와 논의하여 1차 레터 핵심 레슨 결정", sub:"'당장 실행할 1가지 핵심' 위주로 작성" },
+    { text:"1회차 인사말 도입부 포함 FT 가이드" },
+    { text:"AI 코치진 인사말·맺음말 프로젝트 성격에 맞게 보완" }
+  ]},
+  { step:"7단계", title:"코칭레터 발송 및 생성 관리", items:[
+    { text:"레터 생성 시 최대 10명 단위로 끊어서 생성", sub:"시스템 에러 방지" },
+    { text:"1차 발송: 워크숍 종료 후 2~3일 이내", sub:"교육 내용 복습 목적" },
+    { text:"2~4차 발송: 1차 발송일 기준 1주일 간격 연속 발송", sub:"연휴·공휴일 포함 시 일정 조정" }
+  ]}
+];
+
+// Flat scenario list — no member names, just numbers
+const allScenarios = [];
+MEMBERS.forEach((m, mi) => m.problems.forEach((p, pi) => {
+  allScenarios.push({ memberIdx:mi, probIdx:pi, client:m.client, ...p });
+}));
+
+let currentPage = 'member-0';
+const memberState = MEMBERS.map(() => ({ step:1, checks:{} }));
+const debateState = MEMBERS.map(m => m.problems.map(() => ({ comments:[] })));
+let currentScenario = 0;
+
+/* SPLASH */
+function startApp() {
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  buildMemberPages();
+  renderNav();
+  updateProgress(0);
+}
+
+/* NAV */
+function renderNav() {
+  document.getElementById('navTabs').innerHTML =
+    MEMBERS.map((m,i) => `<button class="nav-tab ${currentPage==='member-'+i?'active':''}" onclick="goPage('member-${i}')"><span class="tab-num">0${i+1}</span>${m.name}</button>`).join('') +
+    `<button class="nav-tab debate-tab ${currentPage==='debate'?'active':''}" onclick="goPage('debate')">⚡ 팀 토론</button>`;
+}
+
+function goPage(id) {
+  currentPage = id;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  if (id === 'debate') {
+    document.getElementById('pageDebate').classList.add('active');
+    renderDebate();
+  } else {
+    const idx = parseInt(id.split('-')[1]);
+    document.getElementById('mp-'+idx).classList.add('active');
+    updateProgress(idx);
+  }
+  renderNav();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* BRIEF HTML */
+function briefHTML(m) {
+  return `
+    <div class="brief-header">
+      <div class="brief-icon">🏢</div>
+      <div>
+        <div class="brief-label">Client Brief</div>
+        <div class="brief-client-name">${m.client}</div>
+      </div>
+    </div>
+    <div class="brief-divider"></div>
+    <div class="brief-row"><span class="brief-key">담당자</span><span class="brief-val">${m.manager}</span></div>
+    <div class="brief-row"><span class="brief-key">인원</span><span class="brief-val"><span class="headcount">${m.headcount}명</span></span></div>
+    <div class="brief-row"><span class="brief-key">이메일</span><span class="brief-val brief-email">lucy@realwork.group</span></div>
+    <div class="brief-row"><span class="brief-key">상황</span><span class="brief-val">${m.situation}</span></div>
+    <div class="brief-divider"></div>
+    <div class="needs-box"><strong>워크숍 요청 니즈</strong><br><br>${m.needs}</div>`;
+}
+
+/* STEPS HTML */
+function stepsHTML(mi) {
+  const st = memberState[mi];
+  const dots = WORKFLOW.map((_,i) => {
+    const s = i+1;
+    return s < st.step ? `<div class="sp-dot done"></div>` : s === st.step ? `<div class="sp-dot active"></div>` : `<div class="sp-dot"></div>`;
+  }).join('');
+
+  let html = `<div class="steps-progress">${dots}<span class="sp-label">STEP ${Math.min(st.step,WORKFLOW.length)} / ${WORKFLOW.length}</span></div>`;
+
+  WORKFLOW.forEach((wf,wi) => {
+    const s = wi+1;
+    const isDone = st.step > s, isActive = st.step === s;
+    if (!st.checks[wi]) st.checks[wi] = new Set();
+    const checked = st.checks[wi];
+    const total = wf.items.length, doneC = checked.size, allC = doneC === total;
+    const cls = 'step-card' + (isActive?' active':isDone?' done':' locked');
+
+    let bodyHtml = '';
+    if (isActive || isDone) {
+      const items = wf.items.map((item,ii) => `
+        <div class="check-item ${checked.has(ii)?'checked':''}" onclick="toggleCheck(${mi},${wi},${ii})">
+          <div class="check-box">${checked.has(ii)?'✓':''}</div>
+          <div><div class="check-text">${item.text}</div>${item.sub?`<div class="check-sub">${item.sub}</div>`:''}</div>
+        </div>`).join('');
+      const pct = Math.round(doneC/total*100);
+      bodyHtml = `<div class="step-body">
+        <div class="checklist">${items}</div>
+        <div class="check-progress">
+          <span>${doneC}/${total} 완료</span>
+          <div class="check-progress-bar"><div class="check-progress-fill" style="width:${pct}%"></div></div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;">${pct}%</span>
+        </div>
+        ${isActive?`<button class="btn-next" onclick="nextStep(${mi})" ${!allC?'disabled':''}>${!allC?'항목을 모두 체크해주세요':'다음 단계로'} <span class="arr">→</span></button>`:''}
+      </div>`;
+    }
+
+    html += `<div class="${cls}">
+      <div class="step-head">
+        <div class="step-num">${isDone?'✓':s}</div>
+        <div class="step-info">
+          <div class="step-title">${wf.step}: ${wf.title}</div>
+          <div class="step-status">${isDone?'완료':isActive?'진행 중':'대기'}</div>
+        </div>
+      </div>${bodyHtml}</div>`;
+  });
+
+  if (st.step > WORKFLOW.length) {
+    html += `<div class="complete-banner"><div class="icon">🎉</div><div class="complete-title">운영 워크플로우 완료!</div><div class="complete-sub">${MEMBERS[mi].client} 프로젝트 운영 준비가 완료되었습니다.<br>이제 <strong>⚡ 팀 토론 탭</strong>으로 이동해 문제상황을 함께 논의해보세요.</div></div>`;
+  }
+  return html;
+}
+
+/* MEMBER PAGES */
+function buildMemberPages() {
+  document.getElementById('memberPages').innerHTML = MEMBERS.map((m,i) => `
+    <div class="page ${i===0?'active':''}" id="mp-${i}">
+      <div class="member-layout">
+        <aside class="brief-panel">${briefHTML(m)}</aside>
+        <section class="steps-panel" id="sp-${i}">${stepsHTML(i)}</section>
+      </div>
+    </div>`).join('');
+}
+
+function toggleCheck(mi, wi, ii) {
+  if (!memberState[mi].checks[wi]) memberState[mi].checks[wi] = new Set();
+  const s = memberState[mi].checks[wi];
+  s.has(ii) ? s.delete(ii) : s.add(ii);
+  document.getElementById('sp-'+mi).innerHTML = stepsHTML(mi);
+}
+
+function nextStep(mi) {
+  const st = memberState[mi];
+  const wi = st.step - 1;
+  if (!st.checks[wi] || st.checks[wi].size < WORKFLOW[wi].items.length) return;
+  st.step++;
+  document.getElementById('sp-'+mi).innerHTML = stepsHTML(mi);
+  updateProgress(mi);
+}
+
+function updateProgress(mi) {
+  const pct = Math.round((memberState[mi].step - 1) / WORKFLOW.length * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+/* DEBATE */
+function renderDebate() {
+  const sc = allScenarios[currentScenario];
+  const m = MEMBERS[sc.memberIdx];
+  const db = debateState[sc.memberIdx][sc.probIdx];
+  const comments = db.comments;
+  const total = MEMBERS.length;
+  const allDone = comments.length >= total;
+  const submittedNames = new Set(comments.map(c => c.name));
+
+  // Scenario nav — numbered, no member names
+  const navHtml = `<div class="scenario-nav">${allScenarios.map((s,idx) => {
+    const cnt = debateState[s.memberIdx][s.probIdx].comments.length;
+    const done = cnt >= total;
+    return `<button class="scenario-btn ${currentScenario===idx?'active':''}" onclick="switchScenario(${idx})">
+      문제 ${idx+1} · ${s.title}
+      <span class="s-count">${cnt}/${total}${done?' ✓':''}</span></button>`;
+  }).join('')}</div>`;
+
+  const commentListHtml = comments.length === 0
+    ? `<div class="comment-placeholder">아직 제출된 의견이 없어요. 먼저 의견을 작성해보세요!</div>`
+    : comments.map(c => {
+        const mem = MEMBERS.find(mm => mm.name === c.name);
+        return `<div class="comment-item submitted">
+          <div class="comment-avatar" style="background:${mem?mem.color:'#888'}">${c.name.charAt(0)}</div>
+          <div class="comment-body"><div class="comment-name">${c.name}</div><div class="comment-text">${c.text}</div></div>
+        </div>`;
+      }).join('');
+
+  const available = MEMBERS.filter(mm => !submittedNames.has(mm.name));
+  const inputHtml = allDone
+    ? `<div class="all-done-msg">✓ 6명 모두 제출 완료! 아래 확인 포인트를 확인하세요.</div>`
+    : `<div class="comment-input-row">
+        <select class="member-selector" id="ds">
+          <option value="">이름 선택</option>
+          ${available.map(mm => `<option value="${mm.name}">${mm.name}</option>`).join('')}
+        </select>
+        <textarea class="comment-textarea" id="dt" placeholder="이 상황에서 어떻게 대응하시겠어요? 팀과 논의한 내용을 작성해주세요..."></textarea>
+        <button class="btn-comment-submit" onclick="submitComment()">제출 →</button>
+      </div>`;
+
+  const gatePct = Math.round(comments.length / total * 100);
+
+  // dp-client: show scenario number + client, no member name
+  document.getElementById('debateContent').innerHTML = `
+    ${navHtml}
+    <div class="debate-problem">
+      <div class="dp-top">
+        <div class="dp-badge">문제 ${currentScenario+1}</div>
+        <div><div class="dp-client">${sc.client}</div><div class="dp-title">${sc.title}</div></div>
+      </div>
+      <div class="dp-situation">
+        <div class="dp-speaker">${sc.speaker}</div>
+        <div class="dp-situation-text">"${sc.situation}"</div>
+      </div>
+      <div class="dp-q">Q. ${sc.question}</div>
+      <div class="dp-comments">
+        <div class="comments-header">
+          <div class="comments-title">💬 팀원 의견</div>
+          <div class="comment-counter">${comments.length} / ${total}</div>
+        </div>
+        <div class="comment-list">${commentListHtml}</div>
+        ${inputHtml}
+      </div>
+      <div class="reveal-gate">
+        <span>${comments.length}/${total}명 제출</span>
+        <div class="reveal-gate-bar"><div class="reveal-gate-fill" style="width:${gatePct}%"></div></div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#374151;">${allDone?'🔓 공개됨':'🔒 '+(total-comments.length)+'명 남음'}</span>
+      </div>
+      <div class="dp-reveal ${allDone?'visible':''}">
+        <div class="dp-reveal-label">확인 포인트</div>
+        <div class="dp-reveal-body">${sc.answer}</div>
+      </div>
+    </div>`;
+}
+
+function switchScenario(idx) { currentScenario = idx; renderDebate(); }
+
+function submitComment() {
+  const sel = document.getElementById('ds'), ta = document.getElementById('dt');
+  if (!sel || !ta) return;
+  const name = sel.value.trim(), text = ta.value.trim();
+  if (!name) { alert('이름을 선택해주세요.'); return; }
+  if (!text) { alert('의견을 작성해주세요.'); return; }
+  const sc = allScenarios[currentScenario];
+  debateState[sc.memberIdx][sc.probIdx].comments.push({ name, text });
+  renderDebate();
+  if (debateState[sc.memberIdx][sc.probIdx].comments.length >= MEMBERS.length) {
+    setTimeout(() => { const r = document.querySelector('.dp-reveal.visible'); if(r) r.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 200);
+  }
+}
+</script>
+</body>
+</html>
